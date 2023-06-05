@@ -25,9 +25,10 @@ class CompUnitAST : public BaseAST {
         std::unique_ptr<BaseAST> func_def;
         
     void Dump() const override{
-        std::cout << "CompUnitAST { ";
+        //std::cout << "CompUnitAST { ";
         func_def->Dump();
-        std::cout << " }";
+        //std::cout << " }";
+        std::cout<<endl;
     }
 };
 
@@ -40,22 +41,24 @@ class FuncDefAST : public BaseAST {
 
     //为所有其他 AST 实现 Dump:
     void Dump() const override{
-        std::cout << "FuncDefAST { ";
+        // std::cout << "FuncDefAST { ";
+        std::cout << "fun ";
+        std::cout << "@" << ident << "(): ";
         func_type->Dump();
-        std::cout << ", " << ident << ", ";
+        std::cout << " {\n%entry:\n";
         block->Dump();
-        std::cout << " }";
+        std::cout << "\n}";
     }
 };
 
 class FuncTypeAST : public BaseAST {
     public:
         std:: string func_type;
-    FuncTypeAST(string f_type):func_type(f_type){ }
+    FuncTypeAST(string f_type):func_type(f_type){}
     void Dump() const override{
-        std::cout << "FuncTypeAST { ";
+        // std::cout << "FuncTypeAST { ";
         std::cout<< func_type ;
-        std::cout << " }";
+        // std::cout << " }";
     }
 };
 
@@ -63,9 +66,10 @@ class BlockAST : public BaseAST {
     public:
         std::unique_ptr<BaseAST> stmt;
     void Dump() const override{
-        std::cout<<"BlockAST {";
+        //std::cout<<"BlockAST {";
+        std::cout<<"ret ";
         stmt->Dump();
-        std::cout<<"}";
+        //std::cout<<"}";
     }
 };
 
@@ -74,8 +78,8 @@ class StmtAST : public BaseAST {
         int retv; //return value
     StmtAST(int r):retv(r){}
     void Dump() const override{
-        std::cout<<"StmtAST {";
+        //std::cout<<"StmtAST {";
         std::cout<<retv;
-        std::cout<<"}";
+        //std::cout<<"}";
     }
 };

@@ -12,6 +12,7 @@ using namespace std;
 // 你的代码编辑器/IDE 很可能找不到这个文件, 然后会给你报错 (虽然编译不会出错)
 // 看起来会很烦人, 于是干脆采用这种看起来 dirty 但实际很有效的手段
 extern FILE *yyin;
+extern FILE *yyout;
 extern int yyparse(unique_ptr<BaseAST> &ast);
 
 
@@ -27,6 +28,14 @@ int main(int argc, const char *argv[]){
     yyin = fopen(input, "r");
     assert(yyin);
 
+    // yyout = fopen(output, "w");
+    // assert(yyout);
+
+    // redirect the cout to file
+    if(freopen(output,"w",stdout)==NULL){
+        exit(1);
+    }
+        
     // parse input file
     unique_ptr<BaseAST> ast;
     auto ret = yyparse(ast); // here the ast is passed as a reference
@@ -34,7 +43,6 @@ int main(int argc, const char *argv[]){
 
     // dump the whole AST
     ast->Dump();
-    cout << endl;
 
     return 0;
 }

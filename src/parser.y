@@ -97,7 +97,7 @@ FuncDef
 // 同上, 不再解释
 FuncType
   : INT {
-    $$ = new FuncTypeAST("int");
+    $$ = new FuncTypeAST("i32");
   }
   ;
 
