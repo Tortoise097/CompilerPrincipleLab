@@ -1,0 +1,26 @@
+docker restart amazing_bouman
+docker exec -it amazing_bouman bash
+docker cp D:\CompilerDesign\SharedFiles\ amazing_bouman:/home/CompilerDesignLab/TestFiles/
+
+docker cp D:\CompilerDesign\CompilerPrincipleLab\ amazing_bouman:/home/CompilerDesignLab/my/
+
+// linux 删除整个文件夹：
+rm -rf ./SharedFiles/
+rm -rf ./CompilerPrincipleLab/
+
+//make相关：
+//在项目文件夹（在这里就是SharedFiles）里执行make，自动编译
+make
+//可以用来测试是否可以成功make，如果有错误make不成功。
+
+
+//test 相关：
+//autotest command(不需要make)
+//lv1:
+make
+./build/compiler -koopa hello.c -o hello.koopa
+
+autotest -riscv -s lv9 /home/CompilerDesignLab/TestFiles/SharedFiles
+autotest -riscv /home/CompilerDesignLab/TestFiles/SharedFiles
+autotest -koopa /home/CompilerDesignLab/TestFiles/SharedFiles
+autotest -koopa -s lv9 /home/CompilerDesignLab/TestFiles/SharedFiles
