@@ -24,6 +24,10 @@ using namespace std;
   std::string *str_val;
   int int_val;
   BaseAST *ast_val;
+  FuncType func_type;
+  VarType var_type;
+  DeclType decl_type;
+  StmtType stmt_type;
 }
 
   /* Declare additional arguments for yyparse */
@@ -39,6 +43,9 @@ using namespace std;
 %token INT CONST VOID
 %token IF ELSE WHILE BREAK CONTINUE RETURN
 %token AND OR EQ NE LE GE
+%token PLUS MINUS
+%token MUL DIV
+%token NOT 
 
 %token <str_val> IDENT
 %token <int_val> INT_CONST
@@ -48,9 +55,9 @@ using namespace std;
   /* Take care of the precedence, 
    * These nonterminals should be written from "top" to "bottom"
    */
-%type <ast_val> FuncDef FuncType Block Stmt
-%type <int_val> Number
-
+%type <ast_val> FuncDef Block Stmt
+%type <str_val> Number Exp
+%type <func_type> FuncType
 
 %%
   /*  Grammar here:
@@ -74,17 +81,6 @@ CompUnit
   }
   ;
 
-// FuncDef ::= FuncType IDENT '(' ')' Block;
-// 我们这里可以直接写 '(' 和 ')', 因为之前在 lexer 里已经处理了单个字符的情况
-// 解析完成后, 把这些符号的结果收集起来, 然后拼成一个新的字符串, 作为结果返回
-// $$ 表示非终结符的返回值, 我们可以通过给这个符号赋值的方法来返回结果
-// 你可能会问, FuncType, IDENT 之类的结果已经是字符串指针了
-// 为什么还要用 unique_ptr 接住它们, 然后再解引用, 把它们拼成另一个字符串指针呢
-// 因为所有的字符串指针都是我们 new 出来的, new 出来的内存一定要 delete
-// 否则会发生内存泄漏, 而 unique_ptr 这种智能指针可以自动帮我们 delete
-// 虽然此处你看不出用 unique_ptr 和手动 delete 的区别, 但当我们定义了 AST 之后
-// 这种写法会省下很多内存管理的负担
-
 FuncDef
   : FuncType IDENT '(' ')' Block {
     auto ast = new FuncDefAST(); // 在 Bison 生成的 parser 中完成了 AST 的构建, 并将生成的 AST 返回给了 parser 函数的调用者.
@@ -94,10 +90,11 @@ FuncDef
     $$ = ast;
   }
 ;
-// 同上, 不再解释
+
 FuncType
   : INT {
-    $$ = new FuncTypeAST("i32");
+    auto ast = new FuncTypeAST(FuncType::_int);
+    $$ = ast;
   }
   ;
 
@@ -110,15 +107,41 @@ Block
 ;
 
 Stmt
-  : RETURN Number ';' {
-    auto ast = new StmtAST($2);
+  : RETURN Exp ';' {
+    auto ast = new StmtAST(StmtType::_return);
+    ast->expr = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
 ;
 
+Exp
+  : UnaryExp{
+
+  }
+;
+
+PrimaryExp
+  : '(' Exp ')' 
+  |  Number
+  ; 
+
+UnaryExp
+  :  PrimaryExp 
+  | '+' UnaryExp
+  | '-' UnaryExp
+  | '!' UnaryExp
+  ;
+
+
+  /* UnaryOp 
+  : '+' 
+  | '-' 
+  | '!'
+  ; */
+
 Number
   : INT_CONST {
-    $$ = $1;
+    $$ = new string(to_string($1));
   }
 ;
 

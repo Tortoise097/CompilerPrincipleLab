@@ -46,6 +46,17 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "continue"      {return CONTINUE;}
 
 
+  /* Unary operators */
+  /* Arithmetic operators */
+  /* Comparison and Logic */
+"+" {return PLUS;} 
+"-" {return MINUS;}
+"!" {return NOT;}
+
+"*" {return MUL;}
+"/" {return DIV;}
+"%" {return MOD;}   /* Noted that MOD has the same precedence as MUL and DIV*/
+
 "&&" {return AND;}
 "||" {return OR;}
 "==" {return EQ;}
