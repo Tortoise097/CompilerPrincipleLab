@@ -81,13 +81,14 @@ class BaseAST {
 
 class CompUnitAST : public BaseAST {
     public:        
-        std::unique_ptr<BaseAST> func_def;        
-    void Dump() const override{
-        //std::cout << "CompUnitAST { ";
-        func_def->Dump();
-        //std::cout << " }";
-        std::cout<<endl;
-    }
+        std::unique_ptr<BaseAST> func_def;  
+
+        void Dump() const override{
+            //std::cout << "CompUnitAST { ";
+            func_def->Dump();
+            //std::cout << " }";
+            std::cout<<endl;
+        }
 };
 
 // FuncDef 也是 BaseAST
@@ -97,27 +98,25 @@ class FuncDefAST : public BaseAST {
         std::string ident; //function name
         std::unique_ptr<BaseAST> block;
 
-    //为所有其他 AST 实现 Dump:
-    void Dump() const override{
-        // std::cout << "FuncDefAST { ";
-        std::cout << "fun ";
-        std::cout << "@" << ident << "(): ";
-        func_type->Dump();
-        std::cout << " {\n%entry:\n";
-        block->Dump();
-        std::cout << "\n}";
-    }
+        //为所有其他 AST 实现 Dump:
+        void Dump() const override{
+            // std::cout << "FuncDefAST { ";
+            std::cout << "fun ";
+            std::cout << "@" << ident << "(): ";
+            func_type->Dump();
+            std::cout << " {\n%entry:\n";
+            block->Dump();
+            std::cout << "\n}";
+        }
 };
 
 class FuncTypeAST : public BaseAST {
     public:
-        FuncType func_type;
-    FuncTypeAST(FuncType f_type):func_type(f_type){}
-    void Dump() const override{
-        if(func_type == FuncType::_int){
-            cout<<"i32";
-        }
-    }
+        string ftype;
+        FuncTypeAST(string s):ftype(s){}
+        void Dump() const override{
+            cout<< ftype ;
+        }   
 };
 
 class BlockAST : public BaseAST {
@@ -125,7 +124,7 @@ class BlockAST : public BaseAST {
     // this should be a list for multiple stmt,
     // but before lv4 here is only on statement: the return 
         std::unique_ptr<BaseAST> stmt;
-    void Dump() const override{
+        void Dump() const override{
         //std::cout<<"BlockAST {";
         stmt->Dump();
         //std::cout<<"}";
@@ -135,97 +134,15 @@ class BlockAST : public BaseAST {
 class StmtAST : public BaseAST {
     public:
         StmtType stmt_type;
-        std::unique_ptr<BaseAST> expr; //The actual statement
+        int exp_val; //value of the expression.
     
-    StmtAST(StmtType stt):stmt_type(stt){}
+        StmtAST(StmtType stt):stmt_type(stt){}
 
-    void Dump() const override{
+        void Dump() const override{
         //std::cout<<"StmtAST {";
-        expr->Dump();
-        std::cout<<"ret ";
-        std::cout<<expr->retExp;
+        std::cout<<"ret "<<exp_val;
         //std::cout<<"}";
     }
 };
 
-class ExprAST : public BaseAST{
-    public:
-    // string retExp;
-    //Three types:
-    //UnaryAST
-    //AddAST
-    //LOrAST
-    std::unique_ptr<BaseAST> former; // the former calculated expr 
-    string op1, op2 ; //operand1, operand2,
-    // if Unary, then op2 will not be used.
-
-    OpType op;  //operator;
-    bool is_Number(string s){//test if the given string is a Number or a tempVariable
-        if(s[0]=='%'){
-            return 1;
-        }
-        else{
-            return 0;
-        }
-    }
-
-    int getTempVar(string s){//return a new temp var 
-    // eg input %1 return %2
-        int i = stoi(s)
-    }
-    
-    void Dump() const override{
-        former->Dump();
-        switch(op){
-            case OpType::_not :
-            // !a ==> eq a, 0                
-                retExp = 
-                break;
-            
-            case OpType::_minus :
-                break;
-
-            case OpType::_add :
-                break;
-            
-            case OpType::_sub :
-                break;
-            
-            case OpType::_mul :
-                break;
-            
-            case OpType::_div :
-                break;
-            
-            case OpType::_mod :
-                break;
-            
-            case OpType::_gr :
-                break;
-            
-            case OpType::_ls :
-                break;
-            
-            case OpType::_ge :
-                break;
-            
-            case OpType::_le :
-                break;
-
-            case OpType::_eq :
-                break;
-            
-            case OpType::_neq :
-                break;
-            
-            case OpType::_and :
-                break;
-            
-            case OpType::_or :
-                break;
-
-        }
-    }
-
-};
 

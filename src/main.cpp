@@ -6,6 +6,8 @@
 #include "ast.hpp"
 using namespace std;
 
+const int DEBUG = 0;
+
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义
 // 其次, 因为这个文件不是我们自己写的, 而是被 Bison 生成出来的
@@ -31,11 +33,13 @@ int main(int argc, const char *argv[]){
     // yyout = fopen(output, "w");
     // assert(yyout);
 
-    // redirect the cout to file
-    if(freopen(output,"w",stdout)==NULL){
-        exit(1);
+    if(DEBUG == 0){
+        // redirect the cout to file
+        if(freopen(output,"w",stdout)==NULL){
+            exit(1);
+        }
     }
-        
+    
     // parse input file
     unique_ptr<BaseAST> ast;
     auto ret = yyparse(ast); // here the ast is passed as a reference
@@ -43,6 +47,8 @@ int main(int argc, const char *argv[]){
 
     // dump the whole AST
     ast->Dump();
+
+    // HERE should be an fclose
 
     return 0;
 }

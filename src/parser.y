@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include "ast.hpp"
+#include <cmath>
 
 //声明 lexer 函数和错误处理函数
 int     yylex();
@@ -24,10 +25,6 @@ using namespace std;
   std::string *str_val;
   int int_val;
   BaseAST *ast_val;
-  FuncType func_type;
-  VarType var_type;
-  DeclType decl_type;
-  StmtType stmt_type;
 }
 
   /* Declare additional arguments for yyparse */
@@ -43,9 +40,7 @@ using namespace std;
 %token INT CONST VOID
 %token IF ELSE WHILE BREAK CONTINUE RETURN
 %token AND OR EQ NE LE GE
-%token PLUS MINUS
-%token MUL DIV
-%token NOT 
+
 
 %token <str_val> IDENT
 %token <int_val> INT_CONST
@@ -56,8 +51,10 @@ using namespace std;
    * These nonterminals should be written from "top" to "bottom"
    */
 %type <ast_val> FuncDef Block Stmt
-%type <str_val> Number Exp
-%type <func_type> FuncType
+%type <int_val> Exp UnaryExp AddExp LOrExp
+%type <int_val> RelExp EqExp LAndExp  MulExp
+%type <int_val> Number PrimaryExp
+%type <ast_val> FuncType
 
 %%
   /*  Grammar here:
@@ -93,7 +90,7 @@ FuncDef
 
 FuncType
   : INT {
-    auto ast = new FuncTypeAST(FuncType::_int);
+    auto ast = new FuncTypeAST("i32");
     $$ = ast;
   }
   ;
@@ -109,40 +106,69 @@ Block
 Stmt
   : RETURN Exp ';' {
     auto ast = new StmtAST(StmtType::_return);
-    ast->expr = unique_ptr<BaseAST>($2);
+    ast->exp_val = $2;
     $$ = ast;
   }
 ;
 
 Exp
-  : UnaryExp{
-
-  }
-;
-
-PrimaryExp
-  : '(' Exp ')' 
-  |  Number
-  ; 
-
-UnaryExp
-  :  PrimaryExp 
-  | '+' UnaryExp
-  | '-' UnaryExp
-  | '!' UnaryExp
+  : UnaryExp 
+  | AddExp 
+  | LOrExp 
   ;
 
 
-  /* UnaryOp 
-  : '+' 
-  | '-' 
-  | '!'
-  ; */
+UnaryExp
+  :  PrimaryExp  
+  | '+' UnaryExp {$$ = $2; }
+  | '-' UnaryExp {$$ = 0 - $2;}
+  | '!' UnaryExp {$$ = !$2; }
+  ;
+
+AddExp
+  : MulExp
+  | AddExp '+' MulExp {$$ = $1 + $3;}
+  | AddExp '-' MulExp {$$ = $1 - $3;}
+  ;
+  
+MulExp
+  : UnaryExp
+  | MulExp '*' UnaryExp {$$ = $1 * $3;}
+  | MulExp '/' UnaryExp {$$ = $1 / $3;}
+  | MulExp '%' UnaryExp {$$ = fmod($1, $3);}
+  ;
+
+RelExp
+  : AddExp
+  | RelExp '<' AddExp {$$ = $1 < $3; }
+  | RelExp '>' AddExp {$$ = $1 > $3; }
+  | RelExp LE AddExp {$$ = $1 <= $3; }
+  | RelExp GE AddExp {$$ = $1 >= $3; }
+  ;
+
+EqExp
+  : RelExp
+  | EqExp EQ RelExp {$$ = $1 == $3; }
+  | EqExp NE RelExp {$$ = $1 != $3; }
+  ;
+
+LAndExp
+  : EqExp
+  | LAndExp AND  EqExp {$$ = $1 && $3;}
+  ;
+
+LOrExp
+  : LAndExp
+  | LOrExp OR LAndExp {$$ = $1 || $3;}
+  ;
+
+PrimaryExp
+  : '(' Exp ')' {$$ = $2;}
+  |  Number 
+  ; 
 
 Number
-  : INT_CONST {
-    $$ = new string(to_string($1));
-  }
+  : INT_CONST
 ;
 
 %%

@@ -46,16 +46,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "continue"      {return CONTINUE;}
 
 
-  /* Unary operators */
-  /* Arithmetic operators */
-  /* Comparison and Logic */
-"+" {return PLUS;} 
-"-" {return MINUS;}
-"!" {return NOT;}
-
-"*" {return MUL;}
-"/" {return DIV;}
-"%" {return MOD;}   /* Noted that MOD has the same precedence as MUL and DIV*/
+  /* omit the single operator */
 
 "&&" {return AND;}
 "||" {return OR;}
@@ -67,9 +58,9 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 
 {Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
 
-{Decimal}       { yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
-{Octal}         { yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
-{Hexadecimal}   { yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
+{Decimal}       { yylval.int_val = stoi(yytext, nullptr, 10); return INT_CONST; }
+{Octal}         { yylval.int_val = stoi(yytext, nullptr, 8); return INT_CONST; }
+{Hexadecimal}   { yylval.int_val = stoi(yytext, nullptr, 16); return INT_CONST; }
 
 .               { return yytext[0]; }
 
