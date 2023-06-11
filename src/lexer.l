@@ -56,7 +56,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 ">=" {return GE;}
 
 
-{Identifier}    { yylval.str_val = new string(yytext); return IDENT; }
+{Identifier}    { yylval.str_ptr = new string(yytext); return IDENT; }
 
 {Decimal}       { yylval.int_val = stoi(yytext, nullptr, 10); return INT_CONST; }
 {Octal}         { yylval.int_val = stoi(yytext, nullptr, 8); return INT_CONST; }
