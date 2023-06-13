@@ -21,13 +21,6 @@ using namespace std;
   // actually they should be implemented as inherited attributes
   // but currently i don't know how to use inheritted attributes in bison
 
-/*
-extern SymtabList glb_symtab_list; 
-extern int label_count;
-extern vector<int> while_stack;
-extern vector<int> end_stack;
-extern bool main_certain_return;
-*/
 
 %}
 
@@ -73,7 +66,7 @@ extern bool main_certain_return;
 %type <ast_ptr> FuncDef
 %type <ast_ptr> FuncType
 %type <ast_ptr> Block RepBlockItem BlockItem
-%type <ast_ptr> Decl Stmt non_if_else_stmt if_else_stmt open_stmt closed_stmt
+%type <ast_ptr> Decl Stmt
 %type <ast_ptr> VarDecl ReVarDef VarDef
   /* Since now we skip error handling, those who 
   do not generate IR just don't need to return anything*/
@@ -100,7 +93,7 @@ CompUnit
     //initialize global
     label_count = 0;
     main_certain_return = 0;
-
+    block_ended = 0;
       /* Initialize the glb_symtab_list in the root notde*/
     comp_unit->func_def = unique_ptr<BaseAST>($1);
     ast = move(comp_unit); //generate AST
@@ -276,108 +269,10 @@ Btype
   ;
 
 Stmt
-  : non_if_else_stmt
-  | if_else_stmt 
-  ;
-
-if_else_stmt
-  :open_stmt {cout<<"open stmt"<<endl;}
-  |closed_stmt  {cout<<"closed_stmt"<<endl;}
-  ;
-
-open_stmt
-  : IF '(' Exp ')' {
-      end_stack.push_back(label_count);
-      if_stack.push_back(label_count);
-      label_count +=1;
-      cout<<"open_stmt, Line 293, label_count = "<<label_count<<endl;
-      PrintStack();
-    }
-    if_else_stmt{
-      string s1,s2, s3;
-      int k = if_stack.back();
-      s1 = "%then_" + to_string(k);
-      s2 = "%else_" + to_string(k);
-      s3 = "%end_" +to_string(k);
-      auto ast = new IfThenElseAST($3,s1,s2,s3);
-      ast->br_then = unique_ptr<BaseAST>($6);
-        /* It is an empty Block but since block in Koopa cannot be empty*/
-        /* insert a jump */
-      ast->br_else = make_unique<EmptyAST>();
-      ast->jmp_to_next_end = EndJumping();
-      cout<<"end_jump = "<<EndJumping()<<endl;
-      cout<<"line 309, pop"<<endl;
-      end_stack.pop_back();
-      if_stack.pop_back();
-      cout<<"Line 310, label_count = "<<label_count<<endl;
-      cout<<"After pop, printstack"<<endl;
-      PrintStack();
-      $$ = ast;
-    }
-  | IF '(' Exp ')' {
-      end_stack.push_back(label_count);
-      if_stack.push_back(label_count);
-      label_count +=1;
-      cout<<"open_stmt Line 320, label_count = "<<label_count<<endl;
-      PrintStack();
-    }
-      closed_stmt ELSE open_stmt{
-      string s1,s2,s3;
-      int k = if_stack.back();
-      s1 = "%then_" + to_string(k);
-      s2 = "%else_" + to_string(k);
-      s3 = "%end_" + to_string(k);
-      auto ast = new IfThenElseAST($3,s1,s2,s3);
-      ast->br_then = unique_ptr<BaseAST>($6);
-      ast->br_else = unique_ptr<BaseAST>($8);
-      ast->jmp_to_next_end = EndJumping();
-      cout<<"end_jump = "<<EndJumping()<<endl;
-      cout<<"line 334, pop"<<endl;
-      end_stack.pop_back();
-      if_stack.pop_back();
-      cout<<"Line 310, label_count = "<<label_count<<endl;
-      cout<<"After pop, printstack"<<endl;
-      PrintStack();
-      $$ = ast;
-    }
-  ;
-
-closed_stmt
-  : non_if_else_stmt
-  | IF '(' Exp ')'{
-      end_stack.push_back(label_count);
-      if_stack.push_back(label_count);
-      label_count +=1;
-      cout<<"Line 348, label_count = "<<label_count<<endl;
-      PrintStack();
-    } 
-    closed_stmt ELSE closed_stmt{
-      string s1,s2,s3;
-      int k = if_stack.back();
-      s1 = "%then_" + to_string(k);
-      s2 = "%else_" + to_string(k);
-      s3 = "%end_" +to_string(k);
-      auto ast = new IfThenElseAST($3,s1,s2,s3);
-      ast->br_then = unique_ptr<BaseAST>($6);
-      ast->br_else = unique_ptr<BaseAST>($8);
-      ast->jmp_to_next_end = EndJumping();
-      cout<<"end_jump = "<<EndJumping()<<endl;
-      cout<<"line 363, pop"<<endl;
-      end_stack.pop_back();
-      if_stack.pop_back();
-      cout<<"Line 365, label_count = "<<label_count<<endl;
-      cout<<"After pop, printstack"<<endl;
-      PrintStack();
-      $$ = ast;
-    }
-  ;
-
-
-non_if_else_stmt
   : RETURN Exp ';' {
     auto ast = new StmtAST(StmtType::_returnVar);
     ast->val = $2;
-    cout<<"In parser.y line 263 ret va = "<< ast->val <<endl;
+    //cout<<"In parser.y line 263 ret va = "<< ast->val <<endl;
     $$ = ast;
     }
   | RETURN ';' { 
@@ -418,33 +313,31 @@ non_if_else_stmt
     auto p = unique_ptr<string>($1); //auto delete string s1
     $$ = ast;
     }
-  | WHILE '(' Exp ')' {
-    while_stack.push_back(label_count);
-    end_stack.push_back(label_count);
-    label_count += 1;
+  | IF '(' Exp ')' Stmt{
+      auto ast = new IfThenElseAST($3);
+      ast->br_then = unique_ptr<BaseAST>($5);
+      ast->br_else = make_unique<EmptyAST>();
+      $$ = ast;
     }
-    Stmt { 
-      string s1,s2;
-      int in_which_while = while_stack.back();
-      s1 = "%while_entry_" + to_string(in_which_while);
-      s2 = "%while_end_" + to_string(in_which_while);
-      auto ast = new WhileAST($3,s1,s2);
-      ast->body = unique_ptr<BaseAST>($6);  
-      ast->jmp_to_next_end = EndJumping();
-      while_stack.pop_back();
-      end_stack.pop_back();
+  | IF '(' Exp ')' Stmt ELSE Stmt{
+      auto ast = new IfThenElseAST($3);
+      ast->br_then = unique_ptr<BaseAST>($5);
+      ast->br_else = unique_ptr<BaseAST>($7);
+      $$ = ast;
+    }
+  | WHILE '(' Exp ')' Stmt { 
+      auto ast = new WhileAST($3);
+      ast->body = unique_ptr<BaseAST>($5);  
       $$ = ast;
     }
   | BREAK ';' {
-      int in_which_while = while_stack.back();
       auto ast = new StmtAST(StmtType::_break);
-      ast->name = "%while_end_" +to_string(in_which_while);
+      //ast->name = "%while_end_" +to_string(in_which_while);
       $$ = ast;
     }
   | CONTINUE ';'{
-      int in_which_while = while_stack.back();
       auto ast = new StmtAST(StmtType::_continue);
-      ast->name = "%while_entry_" +to_string(in_which_while);
+      // ast->name = "%while_entry_" +to_string(in_which_while);
       $$ = ast;
     }
   ;

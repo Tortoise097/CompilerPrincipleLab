@@ -28,7 +28,7 @@ extern vector<int> if_stack;
 extern vector<int> while_stack;
 extern vector<int> end_stack;
 extern bool main_certain_return; //this should be func_certain_return,as an inherited attributed of func
-
+extern bool block_ended;
 string EndJumping();
 void PrintStack();
 
@@ -186,6 +186,7 @@ class FuncDefAST : public BaseAST {
             std::cout << "@" << ident << "()";
             func_type->Dump();
             std::cout << " {\n%entry:\n";
+            block_ended = 0; //when ever enter a new block, set it as 0
             block->Dump();
             std::cout << "}";
         }
@@ -315,11 +316,17 @@ class VarDefAST : public BaseAST { // dump one declaration
         if(initialized){
             // @x = alloc i32
             // store 10, @x; 
-            cout<<'@'<<name<<" = alloc i32"<<endl;
-            cout<<"store "<<value<<", @"<<name<<endl;
+            if(!block_ended){ //wrap every ouput with a check
+                cout<<'@'<<name<<" = alloc i32"<<endl;
+                cout<<"store "<<value<<", @"<<name<<endl;
+            }
+            
         }
         else{
-            cout<<'@'<<name<<" = alloc i32"<<endl;
+            if(!block_ended){
+                cout<<'@'<<name<<" = alloc i32"<<endl;
+            }
+            
         }
     }
 
@@ -350,13 +357,21 @@ class StmtAST : public BaseAST {
         void Dump() const override{
             switch(stmt_type){
                 case StmtType::_return:
-                    std::cout<<"ret "<<endl;
+                    if(!block_ended){
+                        std::cout<<"ret "<<endl;
+                        block_ended = 1;
+                    }
                     break;
                 case StmtType::_returnVar:
-                    std::cout<<"ret "<<val<<endl;
+                    if(!block_ended){
+                        std::cout<<"ret "<<val<<endl;
+                        block_ended = 1; // whenever meet a ret/jmp/br, set is as 1
+                    }
                     break;
                 case StmtType::_assign: // store 10, @x
-                    std::cout<<"store "<<val<<", @"<<name<<endl;
+                    if(!block_ended){
+                        std::cout<<"store "<<val<<", @"<<name<<endl;
+                    }
                     break;
                 case StmtType::_block:
                     block->Dump();
@@ -368,10 +383,16 @@ class StmtAST : public BaseAST {
                     block->Dump();
                     break;
                 case StmtType::_break:
-                    cout<<"jump "<<name<<endl; //here name stores the while_end_label
+                    if(!block_ended){
+                        cout<<"jump "<<"%end_"<<while_stack.back()<<endl;
+                        block_ended = 1;
+                    }
                     break;
                 case StmtType::_continue:
-                    cout<<"jump "<<name<<endl; //here name stores the while_entry_label
+                    if(!block_ended){
+                        cout<<"jump "<<"%while_entry_"<<while_stack.back()<<endl;
+                        block_ended = 1;
+                    }
                     break;
                 
                 default:
@@ -384,21 +405,57 @@ class IfThenElseAST : public BaseAST {
     public:
         std::unique_ptr<BaseAST> br_then, br_else; 
         int cond;
-        string label_then, label_else, label_end;
-        string jmp_to_next_end; //jump to the end of the outter if (if it is a nested if)
-        IfThenElseAST(int x,string s1, string s2, string s3):
-            cond(x),label_then(s1),label_else(s2),label_end(s3){}
-        
+        bool empty_else;
+        IfThenElseAST(int x):cond(x){}
         void Dump() const override {
             //if entry
-            cout<<"br "<<cond<<", "<<label_then <<", "<<label_else<<endl;
-            cout<<label_then<<":"<<endl;
+            label_count++; //enter scope, get_new_label:
+            int k = label_count;
+            end_stack.push_back(k);
+            if(!block_ended){
+                cout<<"br "<<cond<<", "<<"%then_"<<k<< ", "\
+                <<"%else_" <<k<<endl;
+                block_ended = 1;
+            } 
+            //enter a new block:
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%then_"<<k<<endl;
+            }
+            cout<<"%then_"<<k<<":"<<endl; 
+            block_ended = 0;
+
             br_then->Dump();
-            cout<<label_else<<":"<<endl;
-            br_else->Dump();
-            cout<<"jump "<<label_end<<endl; //end of else block, jump to end label
-            cout<<label_end<<":"<<endl;
-            cout<<jmp_to_next_end<<endl; //Here!
+
+            //enter a new block:
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%else_"<<k<<endl;
+            }
+            cout<<"%else_" <<k<<":"<<endl;
+            block_ended = 0;
+
+            br_else->Dump(); //could be empty
+
+            if(!block_ended){
+                cout<<"jump "<<"%end_"<<k<<endl;//end of else block, jump to end label
+                block_ended = 1;
+            }
+            //enter a new block:
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%end_"<<k<<endl;
+            }
+            cout<<"%end_"<<k<<":"<<endl;
+            block_ended = 0;
+
+            end_stack.pop_back(); 
+            //cout<<"end_stack pop!"<<endl;
+            if(!end_stack.empty()){
+                if(!block_ended){
+                    cout<<"jump "<<"%end_"<< end_stack.back()<<endl; //jump to next end
+                    block_ended = 1;
+                }
+                
+            }
+            
         }
 };
 
@@ -406,17 +463,39 @@ class WhileAST : public BaseAST {
     public:
         std::unique_ptr<BaseAST> body; 
         int cond;
-        string label_entry, label_end;
-        string jmp_to_next_end;
-        WhileAST(int x,string s1, string s2):
-            cond(x),label_entry(s1),label_end(s2){}
+        WhileAST(int x):cond(x){}
         
         void Dump() const override {
-            //if entry
-            cout<<label_entry <<":"<<endl;
-            body->Dump();
-            cout<<label_end <<":"<<endl;
-            cout<<jmp_to_next_end<<endl; //make sure the block of label_end is not empty
+            label_count++; //enter scope, get_new_label:
+            int k = label_count;
+            end_stack.push_back(k);
+            while_stack.push_back(k);
+
+            //while_entry, enter new block
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%while_entry_"<<k<<endl;
+            }
+            cout<<"%while_entry_"<<k <<":"<<endl;
+            block_ended = 0;//new block
+
+            body->Dump(); 
+
+            //enter a new block:
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%end_"<<k<<endl;
+            }
+            cout<<"%end_"<<k <<":"<<endl;
+            block_ended = 0;
+
+            end_stack.pop_back(); 
+            while_stack.pop_back();
+            //cout<<"end_stack pop!"<<endl;
+            if(!end_stack.empty()){
+                if(!block_ended){
+                    cout<<"jump "<<"%end_"<< end_stack.back()<<endl; 
+                    block_ended = 1;
+                }
+            }
         }
 };
 

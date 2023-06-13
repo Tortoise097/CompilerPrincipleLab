@@ -13,6 +13,8 @@ vector<int> if_stack;
 vector<int> end_stack;  //keep track of the "end" label, used in EndJump 
 
 bool main_certain_return;
+bool block_ended ; //if a block ended, which means no more jump or ret or any other insructions
+
 
 string EndJumping(){ // special handling of Koopa's request of [the block must end with br/jmp/ret]
     if(end_stack.size() < 2){  //it is the outmost layer 
