@@ -6,7 +6,7 @@
 #include "ast.hpp"
 using namespace std;
 
-const int DEBUG = 0;
+const int DEBUG = 1;
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义

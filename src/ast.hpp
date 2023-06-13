@@ -18,7 +18,19 @@ enum class StmtType{
     _else,
     _while,
     _assign, //a variable assignment
+    _break,
+    _continue,
 };
+
+//Gloal variables
+extern int label_count;
+extern vector<int> if_stack;
+extern vector<int> while_stack;
+extern vector<int> end_stack;
+extern bool main_certain_return; //this should be func_certain_return,as an inherited attributed of func
+
+string EndJumping();
+void PrintStack();
 
 
 class SymTab{
@@ -349,11 +361,65 @@ class StmtAST : public BaseAST {
                 case StmtType::_block:
                     block->Dump();
                     break;
+                case StmtType::_if:
+                    block->Dump();
+                    break;
+                case StmtType::_while:
+                    block->Dump();
+                    break;
+                case StmtType::_break:
+                    cout<<"jump "<<name<<endl; //here name stores the while_end_label
+                    break;
+                case StmtType::_continue:
+                    cout<<"jump "<<name<<endl; //here name stores the while_entry_label
+                    break;
+                
                 default:
                     break;   
             }
         }
 };
+
+class IfThenElseAST : public BaseAST {
+    public:
+        std::unique_ptr<BaseAST> br_then, br_else; 
+        int cond;
+        string label_then, label_else, label_end;
+        string jmp_to_next_end; //jump to the end of the outter if (if it is a nested if)
+        IfThenElseAST(int x,string s1, string s2, string s3):
+            cond(x),label_then(s1),label_else(s2),label_end(s3){}
+        
+        void Dump() const override {
+            //if entry
+            cout<<"br "<<cond<<", "<<label_then <<", "<<label_else<<endl;
+            cout<<label_then<<":"<<endl;
+            br_then->Dump();
+            cout<<label_else<<":"<<endl;
+            br_else->Dump();
+            cout<<"jump "<<label_end<<endl; //end of else block, jump to end label
+            cout<<label_end<<":"<<endl;
+            cout<<jmp_to_next_end<<endl; //Here!
+        }
+};
+
+class WhileAST : public BaseAST {
+    public:
+        std::unique_ptr<BaseAST> body; 
+        int cond;
+        string label_entry, label_end;
+        string jmp_to_next_end;
+        WhileAST(int x,string s1, string s2):
+            cond(x),label_entry(s1),label_end(s2){}
+        
+        void Dump() const override {
+            //if entry
+            cout<<label_entry <<":"<<endl;
+            body->Dump();
+            cout<<label_end <<":"<<endl;
+            cout<<jmp_to_next_end<<endl; //make sure the block of label_end is not empty
+        }
+};
+
 
 class EmptyAST : public BaseAST { // empty ast for ';' etc.
     public:

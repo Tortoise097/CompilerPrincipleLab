@@ -1,0 +1,39 @@
+for：2_multiple_if_else
+output:
+open_stmt, Line 293, label_count = 1
+if_stack.size() = 1
+if_stack.back() = 0
+end_stack.size() = 1
+end_stack.back() = 0
+open_stmt, Line 293, label_count = 2
+if_stack.size() = 2
+if_stack.back() = 1
+end_stack.size() = 2
+end_stack.back() = 1
+open_stmt, Line 293, label_count = 3
+if_stack.size() = 3
+if_stack.back() = 2
+end_stack.size() = 3
+end_stack.back() = 2
+end_jump = jump %end_1
+Line 310, label_count = 3
+After pop, printstack
+if_stack.size() = 2
+if_stack.back() = 1
+end_stack.size() = 2
+end_stack.back() = 1
+end_jump = jump %end_0
+Line 310, label_count = 3
+After pop, printstack
+if_stack.size() = 1
+if_stack.back() = 0
+end_stack.size() = 1
+end_stack.back() = 0
+end_jump =
+Line 310, label_count = 3
+After pop, printstack
+if_stack.size() = 0
+if_stack.back() = 0
+end_stack.size() = 0
+end_stack.back() = 0
+error: syntax error

@@ -1,0 +1,39 @@
+fun @main(): i32 {
+%entry:
+@a_1 = alloc i32
+store 10, @a_1
+br 1, %then_1%else_1
+%then_1:
+store 9, @a_1
+@a_2 = alloc i32
+store 5, @a_2
+br 0, %then_0%else_0
+%then_0:
+ret 10
+%else_0:
+@a_3 = alloc i32
+store 98, @a_3
+%end_0:
+%else_1:
+%end_1:
+br 1, %then_4%else_4
+%then_4:
+@b_2 = alloc i32
+store 8, @b_2
+@a_2 = alloc i32
+store 7, @a_2
+br 1, %then_3%else_3
+%then_3:
+br 0, %then_2%else_2
+%then_2:
+ret 0
+%else_2:
+%end_2:
+ret 7
+%else_3:
+ret 8
+%end_3:
+%else_4:
+%end_4:
+ret -1
+}
