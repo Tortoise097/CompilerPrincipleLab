@@ -1,12 +1,15 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <string>
 #include "ast.hpp"
+#include "Koopa2RiscV.hpp"
 using namespace std;
 
 const int DEBUG = 0;
+const int ToRiscV = 1;
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义
@@ -16,6 +19,7 @@ const int DEBUG = 0;
 extern FILE *yyin;
 extern FILE *yyout;
 extern int yyparse(unique_ptr<BaseAST> &ast);
+extern void Koopa2RiscV(const char* str);
 
 
 int main(int argc, const char *argv[]){
@@ -26,18 +30,19 @@ int main(int argc, const char *argv[]){
     auto input = argv[2];
     auto output = argv[4];
 
+    std::streambuf *psbuf, *backup;
+
     // 打开输入文件, 并且指定 lexer 在解析的时候读取这个文件
     yyin = fopen(input, "r");
     assert(yyin);
 
-    // yyout = fopen(output, "w");
-    // assert(yyout);
-
-    if(DEBUG == 0){
-        // redirect the cout to file
-        if(freopen(output,"w",stdout)==NULL){
-            exit(1);
-        }
+    //generate .koopa file
+    std::ofstream firout;
+    if(DEBUG == 0){// redirect cout to the file "temp.koopa"
+        firout.open ("temp.koopa"); //use temp.koopa to store generated IR code.
+        backup = cout.rdbuf();  //keep a cout backup
+        psbuf = firout.rdbuf();        // get file's streambuf
+        std::cout.rdbuf(psbuf);         // assign streambuf to cout
     }
     
     // parse input file
@@ -45,10 +50,35 @@ int main(int argc, const char *argv[]){
     auto ret = yyparse(ast); // here the ast is passed as a reference
     assert(!ret);
 
-    // dump the whole AST
+    // generate Koopa IR code to temp.koopa
     ast->Dump();
 
-    // HERE should be an fclose
+    if(DEBUG == 0){
+        std::cout.rdbuf(backup);        // restore cout's original streambuf
+        firout.close();
+    }
+    
+    // read in the contents of the IR file
+    std::ifstream in("temp.koopa");
+    std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    
+    
+    if(DEBUG == 0){// Redirect cout to .S file.
+        std::ofstream fasout; //assembly output
+        fasout.open (output);
+        backup = std::cout.rdbuf();     // back up cout's streambuf
+        psbuf = fasout.rdbuf();        // get file's streambuf
+        std::cout.rdbuf(psbuf);         // assign streambuf to cout
+    
+        Koopa2RiscV(contents.c_str()); //give the IR contents to Koopa2RiscV to process.
+        
+        std::cout.rdbuf(backup);        // restore cout's original streambuf
+        fasout.close(); 
+    }
+    else{
+        Koopa2RiscV(contents.c_str()); //directly output to console
+    }
+    
 
     return 0;
 }
