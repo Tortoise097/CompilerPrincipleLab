@@ -8,7 +8,13 @@
 #include "Koopa2RiscV.hpp"
 using namespace std;
 
-const int DEBUG = 0;
+// case 1: sysY --> koopa (file)  (0,)
+// case 2: sysY --> koopa (console) (1,)
+// case 3: sysY --> RiscV (file) (0,0)
+// case 4: sysY --> RiscV (console) (0,1)
+
+const int DEBUG_KOOPA = 0;
+const int DEBUG_RISCV = 1;
 const int ToRiscV = 1;
 
 // 声明 lexer 的输入, 以及 parser 函数
@@ -38,7 +44,7 @@ int main(int argc, const char *argv[]){
 
     //generate .koopa file
     std::ofstream firout;
-    if(DEBUG == 0){// redirect cout to the file "temp.koopa"
+    if(DEBUG_KOOPA == 0){// redirect cout to the file "temp.koopa"
         firout.open ("temp.koopa"); //use temp.koopa to store generated IR code.
         backup = cout.rdbuf();  //keep a cout backup
         psbuf = firout.rdbuf();        // get file's streambuf
@@ -53,7 +59,7 @@ int main(int argc, const char *argv[]){
     // generate Koopa IR code to temp.koopa
     ast->Dump();
 
-    if(DEBUG == 0){
+    if(DEBUG_KOOPA == 0){
         std::cout.rdbuf(backup);        // restore cout's original streambuf
         firout.close();
     }
@@ -63,7 +69,7 @@ int main(int argc, const char *argv[]){
     std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     
     
-    if(DEBUG == 0){// Redirect cout to .S file.
+    if(DEBUG_RISCV == 0){// Redirect cout to .S file.
         std::ofstream fasout; //assembly output
         fasout.open (output);
         backup = std::cout.rdbuf();     // back up cout's streambuf
