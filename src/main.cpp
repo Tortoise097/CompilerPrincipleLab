@@ -14,8 +14,7 @@ using namespace std;
 // case 4: sysY --> RiscV (console) (0,1)
 
 const int DEBUG_KOOPA = 0;
-const int DEBUG_RISCV = 1;
-const int ToRiscV = 1;
+const int DEBUG_RISCV = 0;
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义
