@@ -2,12 +2,24 @@ docker stop exciting_kare
 docker restart exciting_kare
 docker exec -it exciting_kare bash
 
-docker cp D:\CompilerDesign\CompilerPrincipleLab\hello.c exciting_kare:/root/hyb_compiler/SharedFiles/
-docker cp D:\CompilerDesign\SharedFiles\expr.c exciting_kare:/root/hyb_compiler/SharedFiles/
+docker cp D:\CompilerDesign\CompilerPrincipleLab\test\ exciting_kare:/root/zlj/CompilerPrincipleLab\
+
+docker cp D:\CompilerDesign\TestFiles\test2\ exciting_kare:/root/
+
+
+docker cp exciting_kare:/root/hyb_compiler/SharedFiles/test6_7/  D:\CompilerDesign\SharedFiles\
 docker cp exciting_kare:/root/hyb_compiler/SharedFiles/hello.koopa D:\CompilerDesign\SharedFiles\ 
 docker cp exciting_kare:/root/hyb_compiler/SharedFiles/expr.koopa D:\CompilerDesign\SharedFiles\ 
 
 docker cp D:\CompilerDesign\CompilerPrincipleLab\ exciting_kare:/root/zlj/
+
+docker cp D:\CompilerDesign\CompilerPrincipleLab\test\ exciting_kare:/root/zlj/CompilerPrincipleLab\
+docker cp exciting_kare:/root/zlj/CompilerPrincipleLab/test/04_var.koopa D:\CompilerDesign\CompilerPrincipleLab\test
+
+
+docker cp exciting_kare:/root/zlj/CompilerPrincipleLab/test/5_scope.koopa D:\CompilerDesign\CompilerPrincipleLab\test\
+
+
 
 // linux 删除整个文件夹：
 rm -rf ./SharedFiles/
@@ -23,11 +35,15 @@ make
 //autotest command(不需要make)
 //lv1:
 make
-./build/compiler -koopa expr.c -o expr.koopa
 
+./build/compiler -riscv ./test/0_main.c -o ./test/0_main.S
+
+./build/compiler -koopa ./test/7_complex.c -o ./test/7_complex.koopa
 
 autotest -koopa -s lv1 ./
-autotest -koopa -s lv3 ./
+autotest -koopa -s lv6 ./
+
+autotest -riscv -s lv1 ./
 
 autotest -riscv -s lv9 /home/CompilerDesignLab/TestFiles/SharedFiles
 autotest -riscv /home/CompilerDesignLab/TestFiles/SharedFiles

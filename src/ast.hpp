@@ -22,6 +22,11 @@ enum class StmtType{
     _continue,
 };
 
+enum class VarType{
+    _const,
+    _var,
+};
+
 //Gloal variables
 extern int label_count;
 extern vector<int> if_stack;
@@ -32,6 +37,16 @@ extern bool block_ended;
 string EndJumping();
 void PrintStack();
 
+class Symbol{ //symbol management
+public:
+    int val;
+    string unique_name;
+    bool if_initialized;
+    VarType sym_type;
+    Symbol(int v, string s, bool b, VarType t):
+        val(v),unique_name(s),if_initialized(b),
+        sym_type(t){}
+};
 
 class SymTab{
 public:
@@ -41,21 +56,13 @@ public:
     // but "trying to change a const's value" is a matter of error handling 
     // so I will not implement these feater here :p
 
-    /* feature to add:
-        the "int" should be changed to a struct of 
-        {
-            int Value;
-            Vartype vt; //_const or _var; enum
-            string alia; // maybe not necesarry
-            bool if_initialized;
-        }
-    */
-    unordered_map<string, int> mp; 
+    unordered_map<string, Symbol> mp; 
 
-    void add_new_var(string Name, int value){
+    void add_new_var(string Name, int v, string s, bool b,VarType t){
         // actually here should have a error case, eg if declared a 
         // variable with the same name 
-        mp.insert(make_pair(Name, value));
+
+        mp.insert(make_pair(Name, Symbol(v,s,b,t)));
     }
 
     //unordered_map<string, int>::const_iterator
@@ -65,7 +72,16 @@ public:
             return "NotFound";
         }
         else{
-            return string(to_string(it->second));
+            return string(to_string((it->second).val));
+        }
+    }
+    string GetUniqueName(string Name){
+        auto it = mp.find(Name);
+        if(it == mp.end()){
+            return ""; 
+        }
+        else{
+            return string((it->second).unique_name);
         }
     }
     int ChangeValue(string Name, int value){
@@ -74,7 +90,7 @@ public:
             return -1; // name not found
         }
         else{
-            it->second = value;
+            (it->second).val = value;
             return 1;
         }
     }
@@ -84,7 +100,8 @@ class SymtabList {
     public:
         // 1. a list that be managed in the ways of a stack, but can also searched forward
         vector<std::unique_ptr<SymTab>> symList; // initialize an empty list
-        
+        //keep record of variables of the same name, used to generate unique_name
+        map<string, int> NameManagement;
         //use: auto temp_st = make_unique<SymTab>();
         // and after finished adding variables in SymTab, push_back this symtab
         // using stList.Push_back(std::move(temp_st));
@@ -106,6 +123,15 @@ class SymtabList {
         // Noted that the GetValue returns int value as a string.
         // it should be turned back to int before use.
 
+        string GenUniqueName(string s){//Generate Unique_name for a new declared variable
+            if(NameManagement.find(s) == NameManagement.end()){//the first copy
+                NameManagement[s] = 1;
+            }
+            else{
+                NameManagement[s] += 1;
+            }
+            return s + '_' + to_string(NameManagement[s]);
+        }
         string GetValue(string Name){
             if(symList.empty()){
                 return "NotFound";
@@ -120,6 +146,19 @@ class SymtabList {
             }
             return "NotFound";
         }
+        string GetUniqueName(string Name){
+            if(symList.empty()){
+                return "NotFound";
+            }
+            for(auto it = symList.end(); it!=symList.begin(); ){
+                --it;
+                string rr = (*it)->GetUniqueName(Name);
+                if(rr != ""){
+                    return rr;
+                }
+            }
+            return "NotFound";
+        }
 
         int ChangeValue(string Name, int Value){ //used in assign
         //return the postfix of the unique_name of the variable it changed values.
@@ -129,11 +168,15 @@ class SymtabList {
                 int rt = (*it)->ChangeValue(Name,Value);
                 if(rt == 1){
                     return i; // changed successfully
+                    // this i is used to calculated the post_fix for the unique_name
+                    // not useful now
                 }
                 i--;
             }
             return -1; // something wrong
         }
+
+
 
 };
 

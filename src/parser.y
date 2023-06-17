@@ -209,7 +209,8 @@ ConstDef
     /*insert the IDENT in symbtab, no return unless debug*/
     // No IR generated, only add to symtab, 
     // use the original name.
-    glb_symtab_list.symList.back()->add_new_var(*unique_ptr<string>($1), $3);
+    glb_symtab_list.symList.back()->add_new_var(*($1), $3, *($1), 1, VarType::_const );
+    auto p = *unique_ptr<string>($1);
     }
   ;
 
@@ -242,21 +243,26 @@ VarDef
     // add_to_symtablist: use the original name
     string name = *($1);
     // cout<<"In parser.y line 234, name = "<<name <<endl;
-    string unique_name = name + "_" + to_string(glb_symtab_list.symList.size());
+    // Generally I think tihs is a smart way to generate unique_name, 
+    // but koopa don't allow,
+    // so I have to use another way
+    // string unique_name = name + "_" + to_string(glb_symtab_list.symList.size());
+    string unique_name = glb_symtab_list.GenUniqueName(name);
     // cout<<"In parser.y line 236, unique_name = "<<unique_name <<endl;
+    
     auto ast = new VarDefAST(unique_name, 0, 0);
-    // cout<<"In parser.y line 238"<<endl;
-    glb_symtab_list.symList.back()->add_new_var(name, 0);
+    // Noted that every variable is by default set to 0
+    glb_symtab_list.symList.back()->add_new_var(name, 0, unique_name,0, VarType::_var);
     // cout<<"In parser.y line 239"<<endl;
     auto p = unique_ptr<string>($1); //auto delete string s1
     $$ = ast;
     } /* Var can be initialized or unintialized*/
   | IDENT '=' Exp { 
     string name = *($1);
-    string unique_name = name + "_" + to_string(glb_symtab_list.symList.size());
+    string unique_name = glb_symtab_list.GenUniqueName(name);
     auto ast = new VarDefAST(unique_name, $3, 1); //Used to generate IR
     // Add to symtab
-    glb_symtab_list.symList.back()->add_new_var(name, $3);
+    glb_symtab_list.symList.back()->add_new_var(name, $3, unique_name, 1, VarType::_var);
     auto p = unique_ptr<string>($1); //auto delete string s1
     $$ = ast; 
     }
@@ -304,9 +310,11 @@ Stmt
     ast->val = $3;
     string name = *($1);
     // It has to know which variable it is assgining to
-    int postfix = glb_symtab_list.ChangeValue(name, $3); // everything is IR is the unique_name
+    //int postfix = glb_symtab_list.ChangeValue(name, $3);
+    glb_symtab_list.ChangeValue(name, $3); // everything is IR is the unique_name
     // but everything in symtab is the original name
-    string unique_name = name + "_" + to_string(postfix);
+    string unique_name = glb_symtab_list.GetUniqueName(name);
+    // string unique_name = name + "_" + to_string(postfix);
     ast->name = unique_name; //assign also use the unique_name
     // change symtab:
     // cout<<"line 298, ChangeValue"<<endl;
