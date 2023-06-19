@@ -11,6 +11,7 @@ int label_count; //the if and while use the same label count
 vector<int> while_stack;    // a stack used to keep track of which while we are in, used to deal with break and continue
 vector<int> if_stack;
 vector<int> end_stack;  //keep track of the "end" label, used in EndJump 
+int IR_temp_var_count;
 
 bool main_certain_return;
 bool block_ended ; //if a block ended, which means no more jump or ret or any other insructions

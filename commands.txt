@@ -14,7 +14,7 @@ docker cp exciting_kare:/root/hyb_compiler/SharedFiles/expr.koopa D:\CompilerDes
 docker cp D:\CompilerDesign\CompilerPrincipleLab\ exciting_kare:/root/zlj/
 
 docker cp D:\CompilerDesign\CompilerPrincipleLab\test\ exciting_kare:/root/zlj/CompilerPrincipleLab\
-docker cp exciting_kare:/root/zlj/CompilerPrincipleLab/test/04_var.koopa D:\CompilerDesign\CompilerPrincipleLab\test
+docker cp exciting_kare:/root/zlj/CompilerPrincipleLab/test2/04_var.koopa D:\CompilerDesign\CompilerPrincipleLab\test2
 
 
 docker cp exciting_kare:/root/zlj/CompilerPrincipleLab/test/5_scope.koopa D:\CompilerDesign\CompilerPrincipleLab\test\
@@ -38,10 +38,10 @@ make
 
 ./build/compiler -riscv ./test/0_main.c -o ./test/0_main.S
 
-./build/compiler -koopa ./test/7_complex.c -o ./test/7_complex.koopa
+./build/compiler -koopa ./test2/13_complex.c -o ./test2/13_complex.koopa
 
 autotest -koopa -s lv1 ./
-autotest -koopa -s lv6 ./
+autotest -koopa -s lv4 ./
 
 autotest -riscv -s lv1 ./
 

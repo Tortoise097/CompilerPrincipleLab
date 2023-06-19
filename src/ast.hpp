@@ -27,6 +27,28 @@ enum class VarType{
     _var,
 };
 
+enum class ExpType{
+    _plus, //do nothing, or %k = add x, 0
+    _minus, // %k = sub 0, x
+    _not,  // %k = eq 0, x
+    _add,  // %k = add x, y
+    _sub,  // %k = sub x, y
+    _mul,  // %k = mul x, y
+    _div,  // %k = div x, y
+    _mod,  // %k = mod x, y
+    _lt, // <    // %k = lt x, y
+    _gt, // >    // %k = gt x, y
+    _le, // <=    // %k = le x, y
+    _ge, // >=    // %k = ge x, y
+    _eq,    // %k = eq x, y
+    _ne,    // %k = ne x, y
+    _and,    // %k = add x, y
+    _or,    // %k = or x, y
+    _Var,   // An variable   
+    _Number, // a const 
+};
+
+
 //Gloal variables
 extern int label_count;
 extern vector<int> if_stack;
@@ -34,6 +56,7 @@ extern vector<int> while_stack;
 extern vector<int> end_stack;
 extern bool main_certain_return; //this should be func_certain_return,as an inherited attributed of func
 extern bool block_ended;
+extern int IR_temp_var_count;
 string EndJumping();
 void PrintStack();
 
@@ -46,6 +69,8 @@ public:
     Symbol(int v, string s, bool b, VarType t):
         val(v),unique_name(s),if_initialized(b),
         sym_type(t){}
+    Symbol(){}
+    
 };
 
 class SymTab{
@@ -58,6 +83,7 @@ public:
 
     unordered_map<string, Symbol> mp; 
 
+    //add_new_var(Name, value, unique_name, if_initialized, var_type)
     void add_new_var(string Name, int v, string s, bool b,VarType t){
         // actually here should have a error case, eg if declared a 
         // variable with the same name 
@@ -75,6 +101,18 @@ public:
             return string(to_string((it->second).val));
         }
     }
+
+    // Get whole information about a variable
+    Symbol* GetInfo(string Name){
+        auto it = mp.find(Name);
+        if(it == mp.end()){
+            return nullptr;
+        }
+        else{
+            return new Symbol(it->second);
+        }
+    }
+
     string GetUniqueName(string Name){
         auto it = mp.find(Name);
         if(it == mp.end()){
@@ -160,6 +198,24 @@ class SymtabList {
             return "NotFound";
         }
 
+        // Get whole information about a variable
+        Symbol* GetInfo(string Name){
+            if(symList.empty()){
+                return nullptr;
+            }
+            for(auto it = symList.end(); it!=symList.begin(); ){
+                --it;
+                Symbol* rr = (*it)->GetInfo(Name);
+                if(rr != nullptr){
+                    return rr;
+                }
+            }
+            return nullptr;
+        }
+
+        // This is a problematic function, 
+        // because actually we cannot change a variables' value due to uncertainty
+        // it is feasible before lv6 where if appears and the programme became uncertain
         int ChangeValue(string Name, int Value){ //used in assign
         //return the postfix of the unique_name of the variable it changed values.
             int i = symList.size();
@@ -192,7 +248,14 @@ class BaseAST {
     // This might causing memory waste, but currently I have no better idea
     // about how to deal with inherited attributes.
     // string BType;
-    unique_ptr<vector<unique_ptr<BaseAST>>> rep_vec_ptr; // vector used in repeat structures like repBlock or RepDecl
+
+    // vector used in repeat structures like repBlock or RepDecl
+    // Inherited attributes, used in Rep__AST.
+    unique_ptr<vector<unique_ptr<BaseAST>>> rep_vec_ptr; 
+
+    // synthesized attributes, only used in ExprAST.
+    bool expr_pure_value;
+    string expr_result;
 
     virtual ~BaseAST() = default;
     //在 C++ 定义的 AST 中, 我们可以借助虚函数的特性, 给 BaseAST 添加一个虚函数 Dump, 来输出 AST 的内容:
@@ -346,28 +409,30 @@ class VarDefAST : public BaseAST { // dump one declaration
     // one variable declaration.
     // string Btype; // this is declared in the BaseAST.
     string name; 
-    int value;
+    // int value;
+    std::unique_ptr<BaseAST> expr; 
     bool initialized; // if the newly declared variable is initialized
     
     //Dealing with duplication of Name
     // The "name" should be passed to ast by parser when parsed 
     // a new variable. It look-up this name in symbtab, and if it is 
     // a duplication, it generate a new name for this variable
-    VarDefAST(string s, int v, bool x):name(s),value(v),initialized(x){} 
+    VarDefAST(string s,bool x):name(s),initialized(x){} 
 
     void Dump() const override {
         if(initialized){
             // @x = alloc i32
             // store 10, @x; 
             if(!block_ended){ //wrap every ouput with a check
-                cout<<'@'<<name<<" = alloc i32"<<endl;
-                cout<<"store "<<value<<", @"<<name<<endl;
+                expr->Dump();
+                cout<<name<<" = alloc i32"<<endl;
+                cout<<"store "<<expr->expr_result<<", "<<name<<endl;
             }
             
         }
         else{
             if(!block_ended){
-                cout<<'@'<<name<<" = alloc i32"<<endl;
+                cout<<name<<" = alloc i32"<<endl;
             }
             
         }
@@ -375,7 +440,158 @@ class VarDefAST : public BaseAST { // dump one declaration
 
 };
 
+// Only need to write one kind of AST to generate calculating code
+// because all the calculations are actually 3-addr-code
+/*
+enum class ExpType{
+    _plus, //do nothing, or %k = add x, 0
+    _minus, // %k = sub 0, x
+    _not,  // %k = eq 0, x
+    _add,  // %k = add x, y
+    _sub,  // %k = sub x, y
+    _mul,  // %k = mul x, y
+    _div,  // %k = div x, y
+    _mod,  // %k = mod x, y
+    _lt, // <    // %k = lt x, y
+    _gt, // >    // %k = gt x, y
+    _le, // <=    // %k = le x, y
+    _ge, // >=    // %k = ge x, y
+    _eq,    // %k = eq x, y
+    _neq,    // %k = ne x, y
+    _and,    // %k = add x, y
+    _or,    // %k = or x, y
+    _Var,   
+    _Number,
+};
 
+*/
+class ExprAST : public BaseAST {
+    public:
+    ExpType opt; //operation type
+    // string expr_result; // the result can be const or a %k
+    // if(pure_value == 1) then expre_result is a pure value(const number)
+
+    // bool expr_pure_value; //if it is a pure value or the calculation process has already involes variables
+    std::unique_ptr<BaseAST> operand1, operand2; 
+    
+    // cannot use dump to return anything.
+    void Dump() const override{
+        if(expr_pure_value){
+            ; //generate no calculation code
+        }
+        else{
+            // How to deal with this???
+            // A. delete the const of Dump() and change all the Dump(), omit the const
+            // B. change the parser.
+            // expr_result = "%" + to_string(IR_temp_var_count);
+            // cout<<"%"<<IR_temp_var_count<<" = ";
+            switch(opt){
+                case ExpType::_Var:
+                    break;
+                case ExpType::_Number:
+                    break;
+                case ExpType::_plus:
+                    break;
+                case ExpType::_minus:
+                    operand1->Dump();
+                    cout<<expr_result<<" = ";
+                    string result_1;
+                    cout<<"sub "<< 0 <<", "<<operand1->expr_result<<endl;
+                    break;
+                case ExpType::_not:
+                    operand1->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"eq "<< 0 <<", "<<operand1->expr_result<<endl;
+                    break;
+                case ExpType::_add:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"add "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_sub:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"sub "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_mul:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"mul "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_div:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"div "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_mod:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"mod "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_lt:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"lt "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_gt:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"gt "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_le:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"le "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_ge:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"ge "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_eq:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"eq "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_ne:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"ne "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_and:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"and "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                case ExpType::_or:
+                    operand1->Dump();
+                    operand2->Dump();
+                    cout<<expr_result<<" = ";
+                    cout<<"or "<<operand1->expr_result<<", "<<operand2->expr_result<<endl;
+                    break;
+                default:
+                    break;
+            }
+            // IR_temp_var_count++;
+        }
+    }
+
+
+
+
+};
 
 class StmtAST : public BaseAST {
     public:
@@ -391,7 +607,8 @@ class StmtAST : public BaseAST {
             5. Block ； //递归，pass by a new *ast
      */
         StmtType stmt_type;
-        int val; //value of the expression.
+        // int val; //value of the expression.
+        std::unique_ptr<BaseAST> expr; 
         string name;
         std::unique_ptr<BaseAST> block;  
     
@@ -405,15 +622,19 @@ class StmtAST : public BaseAST {
                         block_ended = 1;
                     }
                     break;
-                case StmtType::_returnVar:
+                case StmtType::_returnVar: //return Exp
                     if(!block_ended){
-                        std::cout<<"ret "<<val<<endl;
+                        expr->Dump();//generate calculating code // or nothing if pure_value
+                        // the result is a %k, or a pure_value
+                        std::cout<<"ret "<<expr->expr_result<<endl;
                         block_ended = 1; // whenever meet a ret/jmp/br, set is as 1
                     }
                     break;
                 case StmtType::_assign: // store 10, @x
                     if(!block_ended){
-                        std::cout<<"store "<<val<<", @"<<name<<endl;
+                        expr->Dump();//generate calculating code
+                        // the result is a %k
+                        std::cout<<"store "<<expr->expr_result<<", "<<name<<endl;
                     }
                     break;
                 case StmtType::_block:
@@ -447,16 +668,18 @@ class StmtAST : public BaseAST {
 class IfThenElseAST : public BaseAST {
     public:
         std::unique_ptr<BaseAST> br_then, br_else; 
-        int cond;
+        // int cond;
+        std::unique_ptr<BaseAST> expr; 
         bool empty_else;
-        IfThenElseAST(int x):cond(x){}
+        //IfThenElseAST(int x):cond(x){}
         void Dump() const override {
             //if entry
             label_count++; //enter scope, get_new_label:
             int k = label_count;
             end_stack.push_back(k);
             if(!block_ended){
-                cout<<"br "<<cond<<", "<<"%then_"<<k<< ", "\
+                expr->Dump();
+                cout<<"br "<<expr->expr_result<<", "<<"%then_"<<k<< ", "\
                 <<"%else_" <<k<<endl;
                 block_ended = 1;
             } 
@@ -505,8 +728,9 @@ class IfThenElseAST : public BaseAST {
 class WhileAST : public BaseAST {
     public:
         std::unique_ptr<BaseAST> body; 
-        int cond;
-        WhileAST(int x):cond(x){}
+        std::unique_ptr<BaseAST> expr; 
+        // int cond;
+        // WhileAST(int x):cond(x){}
         
         void Dump() const override {
             label_count++; //enter scope, get_new_label:
@@ -520,13 +744,26 @@ class WhileAST : public BaseAST {
             }
             cout<<"%while_entry_"<<k <<":"<<endl;
             block_ended = 0;//new block
+            
+            // The cond block
+            expr->Dump();
+            cout<<"br "<<expr->expr_result<<", %while_body_"<<k\
+                <<", %end_"<<k<<endl;
+            block_ended = 1;
 
-            body->Dump(); 
+            // New block: body:
+            cout<<"%while_body_"<<k <<":"<<endl;
+            block_ended = 0;//new block
+
+            body->Dump(); //some calculation process
+            cout<<"jump %while_entry_"<<k<<endl;
+            block_ended = 1;
+            
 
             //enter a new block:
-            if(!block_ended){ //eliminate adjoin label
-                cout<<"jump "<<"%end_"<<k<<endl;
-            }
+            // if(!block_ended){ //eliminate adjoin label
+            //     cout<<"jump "<<"%end_"<<k<<endl;
+            // }
             cout<<"%end_"<<k <<":"<<endl;
             block_ended = 0;
 

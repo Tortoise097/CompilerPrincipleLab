@@ -55,9 +55,10 @@ using namespace std;
   /* Take care of the precedence, 
    * These nonterminals should be written from "top" to "bottom"
    */
-%type <int_val> Exp UnaryExp AddExp LOrExp
-%type <int_val> RelExp EqExp LAndExp  MulExp
-%type <int_val> Number PrimaryExp LVal
+%type <ast_ptr> Exp UnaryExp AddExp LOrExp
+%type <ast_ptr> RelExp EqExp LAndExp  MulExp PrimaryExp
+%type <int_val> Number
+
     /* temporarily ignore Btype since it can only be i32
     %type <str_ptr> Btype
     */
@@ -94,6 +95,7 @@ CompUnit
     label_count = 0;
     main_certain_return = 0;
     block_ended = 0;
+    IR_temp_var_count = 0;
       /* Initialize the glb_symtab_list in the root notde*/
     comp_unit->func_def = unique_ptr<BaseAST>($1);
     ast = move(comp_unit); //generate AST
@@ -206,11 +208,21 @@ ReConstDef
 
 ConstDef
   : IDENT '=' Exp { 
-    /*insert the IDENT in symbtab, no return unless debug*/
-    // No IR generated, only add to symtab, 
-    // use the original name.
-    glb_symtab_list.symList.back()->add_new_var(*($1), $3, *($1), 1, VarType::_const );
-    auto p = *unique_ptr<string>($1);
+      /*insert the IDENT in symbtab, no return unless debug*/
+      // No IR generated, only add to symtab, 
+      // use the original name.
+      if(!($3)->expr_pure_value){
+        //this Exp must be a constExp which means this wouldn't happen
+        cout<<"error, cannot initialize a const"<<endl;
+      }
+      else{
+        int val = stoi(($3)->expr_result);
+        //set unique_name to default, because unique_name is only used in generating IR
+        // but const do not generate any IR code
+        glb_symtab_list.symList.back()->add_new_var(*($1), val, *($1), 1, VarType::_const );
+        auto p =  unique_ptr<string>($1);
+        auto p2 = unique_ptr<BaseAST>($3); //delete S3
+      }
     }
   ;
 
@@ -247,10 +259,10 @@ VarDef
     // but koopa don't allow,
     // so I have to use another way
     // string unique_name = name + "_" + to_string(glb_symtab_list.symList.size());
-    string unique_name = glb_symtab_list.GenUniqueName(name);
+    string unique_name = "@" + glb_symtab_list.GenUniqueName(name);
     // cout<<"In parser.y line 236, unique_name = "<<unique_name <<endl;
     
-    auto ast = new VarDefAST(unique_name, 0, 0);
+    auto ast = new VarDefAST(unique_name, 0);
     // Noted that every variable is by default set to 0
     glb_symtab_list.symList.back()->add_new_var(name, 0, unique_name,0, VarType::_var);
     // cout<<"In parser.y line 239"<<endl;
@@ -259,10 +271,13 @@ VarDef
     } /* Var can be initialized or unintialized*/
   | IDENT '=' Exp { 
     string name = *($1);
-    string unique_name = glb_symtab_list.GenUniqueName(name);
-    auto ast = new VarDefAST(unique_name, $3, 1); //Used to generate IR
+    // cout<<"274"<<endl;
+    string unique_name = "@" + glb_symtab_list.GenUniqueName(name);
+    auto ast = new VarDefAST(unique_name, 1); //Used to generate IR
+    ast->expr = unique_ptr<BaseAST>($3);
     // Add to symtab
-    glb_symtab_list.symList.back()->add_new_var(name, $3, unique_name, 1, VarType::_var);
+    // Noted that the "value" is set to 0 ,but we will not use the variable's value from symbtab
+    glb_symtab_list.symList.back()->add_new_var(name, 0, unique_name, 1, VarType::_var);
     auto p = unique_ptr<string>($1); //auto delete string s1
     $$ = ast; 
     }
@@ -277,7 +292,7 @@ Btype
 Stmt
   : RETURN Exp ';' {
     auto ast = new StmtAST(StmtType::_returnVar);
-    ast->val = $2;
+    ast->expr = unique_ptr<BaseAST>($2);
     //cout<<"In parser.y line 263 ret va = "<< ast->val <<endl;
     $$ = ast;
     }
@@ -295,8 +310,7 @@ Stmt
     $$ = ast;
     } 
   | Exp ';'  {
-     /* An empty calc, return EmptyAST that donot dump anything. 
-     This can be optimized! */ 
+     /* do not generate any IR code*/ 
      auto ast = new EmptyAST();
      $$ = ast;
      } 
@@ -307,13 +321,13 @@ Stmt
     // generate IR
     // cout<<"line 293, assignment"<<endl;
     auto ast = new StmtAST(StmtType::_assign);
-    ast->val = $3;
+    ast->expr = unique_ptr<BaseAST>($3);
     string name = *($1);
     // It has to know which variable it is assgining to
     //int postfix = glb_symtab_list.ChangeValue(name, $3);
-    glb_symtab_list.ChangeValue(name, $3); // everything is IR is the unique_name
+    // glb_symtab_list.ChangeValue(name, $3); // everything is IR is the unique_name
     // but everything in symtab is the original name
-    string unique_name = glb_symtab_list.GetUniqueName(name);
+    string unique_name = "@" + glb_symtab_list.GetUniqueName(name);
     // string unique_name = name + "_" + to_string(postfix);
     ast->name = unique_name; //assign also use the unique_name
     // change symtab:
@@ -322,19 +336,22 @@ Stmt
     $$ = ast;
     }
   | IF '(' Exp ')' Stmt{
-      auto ast = new IfThenElseAST($3);
+      auto ast = new IfThenElseAST();
+      ast->expr = unique_ptr<BaseAST>($3);
       ast->br_then = unique_ptr<BaseAST>($5);
       ast->br_else = make_unique<EmptyAST>();
       $$ = ast;
     }
   | IF '(' Exp ')' Stmt ELSE Stmt{
-      auto ast = new IfThenElseAST($3);
+      auto ast = new IfThenElseAST();
+      ast->expr = unique_ptr<BaseAST>($3);
       ast->br_then = unique_ptr<BaseAST>($5);
       ast->br_else = unique_ptr<BaseAST>($7);
       $$ = ast;
     }
   | WHILE '(' Exp ')' Stmt { 
-      auto ast = new WhileAST($3);
+      auto ast = new WhileAST();
+      ast->expr = unique_ptr<BaseAST>($3);
       ast->body = unique_ptr<BaseAST>($5);  
       $$ = ast;
     }
@@ -361,70 +378,305 @@ Exp
 UnaryExp
   :  PrimaryExp  
   | '+' UnaryExp {$$ = $2; }
-  | '-' UnaryExp {$$ = 0 - $2;}
-  | '!' UnaryExp {$$ = !$2; }
+  | '-' UnaryExp {
+      auto ast = new ExprAST();
+      if(($2)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(0 - stoi(($2)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($2);
+        ast->opt = ExpType::_minus;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | '!' UnaryExp {
+      auto ast = new ExprAST();
+      if(($2)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(!stoi(($2)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($2);
+        ast->opt = ExpType::_not;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
   ;
 
 AddExp
   : MulExp
-  | AddExp '+' MulExp {$$ = $1 + $3;}
-  | AddExp '-' MulExp {$$ = $1 - $3;}
+  | AddExp '+' MulExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) + stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_add;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | AddExp '-' MulExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) - stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_sub;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
   ;
   
 MulExp
   : UnaryExp
-  | MulExp '*' UnaryExp {$$ = $1 * $3;}
-  | MulExp '/' UnaryExp {$$ = $1 / $3;}
-  | MulExp '%' UnaryExp {$$ = fmod($1, $3);}
+  | MulExp '*' UnaryExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) * stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_mul;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | MulExp '/' UnaryExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) / stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_div;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | MulExp '%' UnaryExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) % stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_mod;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;}
   ;
 
 RelExp
   : AddExp
-  | RelExp '<' AddExp {$$ = $1 < $3; }
-  | RelExp '>' AddExp {$$ = $1 > $3; }
-  | RelExp LE AddExp {$$ = $1 <= $3; }
-  | RelExp GE AddExp {$$ = $1 >= $3; }
+  | RelExp '<' AddExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) < stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_lt;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | RelExp '>' AddExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) > stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_gt;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | RelExp LE AddExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) <= stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_le;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | RelExp GE AddExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) >= stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_ge;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
   ;
 
 EqExp
   : RelExp
-  | EqExp EQ RelExp {$$ = $1 == $3; }
-  | EqExp NE RelExp {$$ = $1 != $3; }
+  | EqExp EQ RelExp {
+    auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) == stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_eq;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
+  | EqExp NE RelExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) != stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_ne; 
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1; 
+      }
+      $$ = ast;
+    }
   ;
 
 LAndExp
   : EqExp
-  | LAndExp AND  EqExp {$$ = $1 && $3;}
+  | LAndExp AND  EqExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) && stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_and;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
   ;
 
 LOrExp
   : LAndExp
-  | LOrExp OR LAndExp {$$ = $1 || $3;}
+  | LOrExp OR LAndExp {
+      auto ast = new ExprAST();
+      if(($1)->expr_pure_value && ($3)->expr_pure_value){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(stoi(($1)->expr_result) || stoi(($3)->expr_result));
+      }
+      else{
+        ast->expr_pure_value = 0;
+        ast->operand1 = unique_ptr<BaseAST>($1);
+        ast->operand2 = unique_ptr<BaseAST>($3);
+        ast->opt = ExpType::_or;  
+        ast->expr_result = "%" + to_string(IR_temp_var_count);
+        IR_temp_var_count += 1;
+      }
+      $$ = ast;
+    }
   ;
 
 PrimaryExp
   : '(' Exp ')' {$$ = $2;}
-  | LVal
-  | Number 
+  | IDENT{
+      auto ast = new ExprAST();
+      string name = *($1);
+      auto symptr = unique_ptr<Symbol>(glb_symtab_list.GetInfo(name));
+      if(symptr->sym_type == VarType::_const){
+        ast->expr_pure_value = 1;
+        ast->expr_result = to_string(symptr->val);
+        // ast->former_exp = make_unique<EmptyAST>();
+        ast->opt = ExpType::_Number;
+      }
+      else{
+        // cout<<"In 657"<<endl;
+        ast->expr_pure_value = 0; //already involves variable
+        ast->expr_result = symptr->unique_name;
+        // ast->former_exp = make_unique<EmptyAST>();
+        ast->opt = ExpType::_Var;
+      }
+      $$ = ast;
+    }
+  | Number {
+    // cout<<"In 665"<<endl;
+    auto ast = new ExprAST();
+    ast->expr_pure_value = 1;
+    ast->expr_result = to_string($1);
+    // ast->former_exp = make_unique<EmptyAST>();
+    ast->opt = ExpType::_Number;
+    $$ = ast;
+    }
   ; 
 
 Number
   : INT_CONST
 ;
 
-LVal
-  : IDENT{
-    string name = *($1);
-    string s = glb_symtab_list.GetValue(name);
-      if(s == "NotFound"){
-        printf("Something wrong in line 366, not found.\n");
-      }
-      else{
-        auto p = unique_ptr<string>($1); //auto delete string s1
-        $$ = stoi(s);
-      }
-    } 
-  ;
 
 %%
 

@@ -1,0 +1,5 @@
+fun @main(): i32 {
+%entry:
+@x_1 = alloc i32
+ret 0
+}
