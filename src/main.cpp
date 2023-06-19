@@ -9,7 +9,7 @@
 using namespace std;
 
 
-const int DEBUG_KOOPA = 0;
+const int DEBUG_KOOPA = 1;
 const int DEBUG_RISCV = 0;
 bool to_RiscV = 0; //default to koopa
 

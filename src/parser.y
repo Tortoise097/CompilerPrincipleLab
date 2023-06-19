@@ -21,7 +21,6 @@ using namespace std;
   // actually they should be implemented as inherited attributes
   // but currently i don't know how to use inheritted attributes in bison
 
-
 %}
 
   /* defines the YYSTYPE as below: */
@@ -327,7 +326,7 @@ Stmt
     //int postfix = glb_symtab_list.ChangeValue(name, $3);
     // glb_symtab_list.ChangeValue(name, $3); // everything is IR is the unique_name
     // but everything in symtab is the original name
-    string unique_name = "@" + glb_symtab_list.GetUniqueName(name);
+    string unique_name = glb_symtab_list.GetUniqueName(name);
     // string unique_name = name + "_" + to_string(postfix);
     ast->name = unique_name; //assign also use the unique_name
     // change symtab:
