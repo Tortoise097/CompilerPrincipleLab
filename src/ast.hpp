@@ -54,11 +54,16 @@ extern int label_count;
 extern vector<int> if_stack;
 extern vector<int> while_stack;
 extern vector<int> end_stack;
-extern bool main_certain_return; //this should be func_certain_return,as an inherited attributed of func
+
 extern bool block_ended;
 extern int IR_temp_var_count; 
-
 extern int temp_var_used_for_load;// actually it's a bug about IR_temp_var_count is set to 0 zfter parsing, so I have to use another temp_var_count, and initialized it to 1000
+
+extern int main_return_value; 
+extern bool main_certain_return;
+
+
+
 
 string EndJumping();
 void PrintStack();
@@ -74,6 +79,11 @@ public:
         sym_type(t){}
     Symbol(){}
     
+};
+
+class GlobalInfo{
+public:
+
 };
 
 class SymTab{
@@ -277,6 +287,9 @@ class CompUnitAST : public BaseAST {
         void Dump() const override{
             //std::cout << "CompUnitAST { ";
             temp_var_used_for_load = 1000;
+
+            main_return_value = 0; //initialize it here.
+
             func_def->Dump();
             //std::cout << " }";
             std::cout<<endl;
@@ -299,6 +312,7 @@ class FuncDefAST : public BaseAST {
             std::cout << " {\n%entry:\n";
             block_ended = 0; //when ever enter a new block, set it as 0
             block->Dump();
+            // std::cout<<"ret "<<main_return_value<<endl;
             std::cout << "}";
         }
 };
@@ -861,47 +875,53 @@ class IfThenElseAST : public BaseAST {
                 <<"%else_" <<k<<endl;
                 block_ended = 1;
             } 
-            //enter a new block:
-            if(!block_ended){ //eliminate adjoin label
-                cout<<"jump "<<"%then_"<<k<<endl;
-            }
+
+            // //enter a new block:
+            // if(!block_ended){ //eliminate adjoin label
+            //     cout<<"jump "<<"%then_"<<k<<endl;
+            // }
+            // enter a new block.
             cout<<"%then_"<<k<<":"<<endl; 
             block_ended = 0;
 
             br_then->Dump();
 
-            //enter a new block:
-            if(!block_ended){ //eliminate adjoin label
-                cout<<"jump "<<"%else_"<<k<<endl;
+            if(!block_ended){
+                cout<<"jump "<<"%end_"<<k<<endl;
+                block_ended = 1;
             }
+
+            // //enter a new block:
+            // if(!block_ended){ //eliminate adjoin label
+            //     cout<<"jump "<<"%else_"<<k<<endl;
+            // }
+            // label, enter a new block.
             cout<<"%else_" <<k<<":"<<endl;
             block_ended = 0;
 
             br_else->Dump(); //could be empty
 
             if(!block_ended){
+                //use this to eliminate adjacent label
                 cout<<"jump "<<"%end_"<<k<<endl;//end of else block, jump to end label
                 block_ended = 1;
             }
-            //enter a new block:
-            if(!block_ended){ //eliminate adjoin label
-                cout<<"jump "<<"%end_"<<k<<endl;
-            }
+
             cout<<"%end_"<<k<<":"<<endl;
             block_ended = 0;
 
             end_stack.pop_back(); 
             //cout<<"end_stack pop!"<<endl;
+            
             /*
+            // 不能在这里jump，不然会有bug
             if(!end_stack.empty()){
                 if(!block_ended){
                     cout<<"jump "<<"%end_"<< end_stack.back()<<endl; //jump to next end
                     block_ended = 1;
-                }
-                
+                }    
             }
             */
-            
         }
 };
 

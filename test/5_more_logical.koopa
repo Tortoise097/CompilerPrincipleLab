@@ -1,0 +1,57 @@
+fun @main(): i32 {
+%entry:
+@a_1 = alloc i32
+store 1, @a_1
+@b_1 = alloc i32
+store 0, @b_1
+@c_1 = alloc i32
+store 4, @c_1
+@d_1 = alloc i32
+store 5, @d_1
+%1000 = load @a_1
+%0 = eq %1000, 1
+%1001 = load @a_1
+%1 = eq %1001, 2
+%2 = or %0, %1
+br %2, %then_1, %else_1
+%then_1:
+jump %end_1
+%else_1:
+jump %end_1
+%end_1:
+%1002 = load @b_1
+%3 = eq %1002, 0
+%1003 = load @b_1
+%4 = eq %1003, 1
+%5 = or %3, %4
+br %5, %then_2, %else_2
+%then_2:
+%1004 = load @d_1
+%6 = add %1004, 1
+store %6, @d_1
+jump %end_2
+%else_2:
+jump %end_2
+%end_2:
+%1005 = load @a_1
+%1006 = load @b_1
+%7 = and %1005, %1006
+%1007 = load @c_1
+%1008 = load @d_1
+%8 = and %1007, %1008
+%9 = or %7, %8
+br %9, %then_3, %else_3
+%then_3:
+%1009 = load @d_1
+%10 = add %1009, 1
+store %10, @d_1
+jump %end_3
+%else_3:
+jump %end_3
+%end_3:
+%1010 = load @c_1
+%11 = eq 0, %1010
+%1011 = load @d_1
+%12 = or %1011, %11
+ret %12
+}

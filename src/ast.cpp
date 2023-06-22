@@ -14,6 +14,7 @@ vector<int> end_stack;  //keep track of the "end" label, used in EndJump
 int IR_temp_var_count;
 int temp_var_used_for_load;
 bool main_certain_return;
+int main_return_value;
 bool block_ended ; //if a block ended, which means no more jump or ret or any other insructions
 
 

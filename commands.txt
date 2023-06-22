@@ -2,7 +2,7 @@ docker stop exciting_kare
 docker restart exciting_kare
 docker exec -it exciting_kare bash
 
-docker cp D:\CompilerDesign\CompilerPrincipleLab\test\ exciting_kare:/root/zlj/CompilerPrincipleLab\
+docker cp D:\CompilerDesign\CompilerPrincipleLab\ exciting_kare:/root/zlj/
 
 docker cp D:\CompilerDesign\TestFiles\test2\ exciting_kare:/root/
 
@@ -38,7 +38,7 @@ make
 
 ./build/compiler -riscv ./test/0_main.c -o ./test/0_main.S
 
-./build/compiler -koopa ./test/03_while_true.c -o ./test/03_while_true.koopa
+./build/compiler -koopa ./test/5_more_logical.c -o ./test/5_more_logical.koopa
 
 autotest -koopa -s lv1 ./
 autotest -koopa -s lv6 ./

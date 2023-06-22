@@ -11,7 +11,7 @@ using namespace std;
 
 const int DEBUG_KOOPA = 0;
 const int DEBUG_RISCV = 0;
-bool to_RiscV = 1; //default to koopa
+bool to_RiscV = 0; //default to koopa
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义
