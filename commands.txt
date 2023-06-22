@@ -38,10 +38,10 @@ make
 
 ./build/compiler -riscv ./test/0_main.c -o ./test/0_main.S
 
-./build/compiler -koopa ./test2/13_complex.c -o ./test2/13_complex.koopa
+./build/compiler -koopa ./test/03_while_true.c -o ./test/03_while_true.koopa
 
 autotest -koopa -s lv1 ./
-autotest -koopa -s lv4 ./
+autotest -koopa -s lv6 ./
 
 autotest -riscv -s lv1 ./
 

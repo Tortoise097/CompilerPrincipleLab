@@ -490,7 +490,7 @@ class ExprAST : public BaseAST {
             // B. change the parser.
             // expr_result = "%" + to_string(IR_temp_var_count);
             // cout<<"%"<<IR_temp_var_count<<" = ";
-            cout<<"After parsing, IR_temp_var_count = "<<IR_temp_var_count<<endl;
+            // cout<<"After parsing, IR_temp_var_count = "<<temp_var_used_for_load<<endl;
             string result_1, result_2;
             /*
             if(opt == ExpType::_minus || opt == ExpType::_not || opt == ExpType::_plus){
@@ -518,7 +518,7 @@ class ExprAST : public BaseAST {
                     operand1->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -528,7 +528,7 @@ class ExprAST : public BaseAST {
                     operand1->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -539,12 +539,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -555,12 +555,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -571,12 +571,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -587,12 +587,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -603,12 +603,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -619,12 +619,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -635,12 +635,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -651,12 +651,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -667,12 +667,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -683,12 +683,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -699,12 +699,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -715,12 +715,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -731,12 +731,12 @@ class ExprAST : public BaseAST {
                     operand2->Dump();
                     result_1 = operand1->expr_result;
                     if(operand1->opt == ExpType::_Var){
-                        result_1 = "%" + to_string(IR_temp_var_count++);
+                        result_1 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_1<<" = load "<<operand1->expr_result<<endl;
                     }
                     result_2 = operand2->expr_result;
                     if(operand2->opt == ExpType::_Var){
-                        result_2 = "%" + to_string(IR_temp_var_count++);
+                        result_2 = "%" + to_string(temp_var_used_for_load++);
                         cout<<result_2<<" = load "<<operand2->expr_result<<endl;
                     }
                     cout<<expr_result<<" = ";
@@ -790,7 +790,7 @@ class StmtAST : public BaseAST {
                         // the result is a %k, or a pure_value
                         result = expr->expr_result;
                         if(expr->opt == ExpType::_Var){
-                            result = "%" + to_string(IR_temp_var_count++);
+                            result = "%" + to_string(temp_var_used_for_load++);
                             cout<<result<<" = load "<<expr->expr_result<<endl;
                         }
                         std::cout<<"ret "<<result<<endl;
@@ -803,7 +803,7 @@ class StmtAST : public BaseAST {
                         // the result is a %k
                         result = expr->expr_result;
                         if(expr->opt == ExpType::_Var){
-                            result = "%" + to_string(IR_temp_var_count++);
+                            result = "%" + to_string(temp_var_used_for_load++);
                             cout<<result<<" = load "<<expr->expr_result<<endl;
                         }
                         std::cout<<"store "<<result<<", "<<name<<endl;
@@ -849,10 +849,15 @@ class IfThenElseAST : public BaseAST {
             label_count++; //enter scope, get_new_label:
             int k = label_count;
             end_stack.push_back(k);
+            string result;
             if(!block_ended){
-                
                 expr->Dump();
-                cout<<"br "<<expr->expr_result<<", "<<"%then_"<<k<< ", "\
+                result = expr->expr_result;
+                if(expr->opt == ExpType::_Var){
+                    result = "%" + to_string(temp_var_used_for_load++);
+                    cout<<result<<" = load "<<expr->expr_result<<endl;
+                }
+                cout<<"br "<<result<<", "<<"%then_"<<k<< ", "\
                 <<"%else_" <<k<<endl;
                 block_ended = 1;
             } 
@@ -887,6 +892,7 @@ class IfThenElseAST : public BaseAST {
 
             end_stack.pop_back(); 
             //cout<<"end_stack pop!"<<endl;
+            /*
             if(!end_stack.empty()){
                 if(!block_ended){
                     cout<<"jump "<<"%end_"<< end_stack.back()<<endl; //jump to next end
@@ -894,6 +900,7 @@ class IfThenElseAST : public BaseAST {
                 }
                 
             }
+            */
             
         }
 };
@@ -910,7 +917,7 @@ class WhileAST : public BaseAST {
             int k = label_count;
             end_stack.push_back(k);
             while_stack.push_back(k);
-
+            string result;
             //while_entry, enter new block
             if(!block_ended){ //eliminate adjoin label
                 cout<<"jump "<<"%while_entry_"<<k<<endl;
@@ -920,35 +927,45 @@ class WhileAST : public BaseAST {
             
             // The cond block
             expr->Dump();
-            cout<<"br "<<expr->expr_result<<", %while_body_"<<k\
-                <<", %end_"<<k<<endl;
-            block_ended = 1;
+            if(!block_ended){
+                result = expr->expr_result;
+                if(expr->opt == ExpType::_Var){
+                    result = "%" + to_string(temp_var_used_for_load++);
+                    cout<<result<<" = load "<<expr->expr_result<<endl;
+                }
+                cout<<"br "<<result<<", %while_body_"<<k\
+                    <<", %end_"<<k<<endl;
+                block_ended = 1;
+            }
 
             // New block: body:
             cout<<"%while_body_"<<k <<":"<<endl;
             block_ended = 0;//new block
 
             body->Dump(); //some calculation process
-            cout<<"jump %while_entry_"<<k<<endl;
-            block_ended = 1;
-            
+            if(!block_ended){
+                cout<<"jump %while_entry_"<<k<<endl;
+                block_ended = 1;
+            }
 
             //enter a new block:
-            // if(!block_ended){ //eliminate adjoin label
-            //     cout<<"jump "<<"%end_"<<k<<endl;
-            // }
+            if(!block_ended){ //eliminate adjoin label
+                cout<<"jump "<<"%end_"<<k<<endl;
+            }
             cout<<"%end_"<<k <<":"<<endl;
             block_ended = 0;
 
             end_stack.pop_back(); 
             while_stack.pop_back();
             //cout<<"end_stack pop!"<<endl;
+            /*
             if(!end_stack.empty()){
                 if(!block_ended){
                     cout<<"jump "<<"%end_"<< end_stack.back()<<endl; 
                     block_ended = 1;
                 }
             }
+            */
         }
 };
 
